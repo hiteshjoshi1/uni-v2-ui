@@ -8,12 +8,13 @@ export type ContractsOnChain = {
   WETH9: `0x${string}`;
   [k: string]: `0x${string}` | undefined;
 };
-
+//TODO - understand better
 const ADDRESS_BOOK: Record<number, ContractsOnChain> = {
   31337: (addrs31337 as any)["31337"],
   // 11155111: (addrs11155111 as any)["11155111"],
 };
 
+// TODO - why the addresses called found, the variable naming is shit
 export function getAddressesFor(chainId: number): ContractsOnChain {
   const found = ADDRESS_BOOK[chainId];
   if (!found) throw new Error(`No addresses for chainId ${chainId}`);

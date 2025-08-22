@@ -1,0 +1,6 @@
+[
+    { "symbol": "WETH", "name": "Wrapped Ether", "address": "", "decimals": 18 },
+    { "symbol": "DAI",  "name": "Mock DAI",      "address": "", "decimals": 18 },
+    { "symbol": "USDC", "name": "Mock USDC",     "address": "", "decimals": 18 }
+  ]
+  

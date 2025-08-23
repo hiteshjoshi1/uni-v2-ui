@@ -10,6 +10,7 @@ export const CHAINS = HAS_SEPOLIA ? ([foundry, sepolia] as const) : ([foundry] a
 
 const transports: Record<number, Transport> = {
   [foundry.id]: http(getRpcUrl(foundry.id)),
+  // [sepolia.id]: http(import.meta.env.VITE_RPC_11155111),
 };
 if (HAS_SEPOLIA) transports[sepolia.id] = http(getRpcUrl(sepolia.id));
 

@@ -1,3 +1,4 @@
+// src/components/SwapPanel.tsx
 import { useEffect, useMemo, useState } from "react";
 import { useAccount, useChainId } from "wagmi";
 import TokenSelect, { NATIVE_ETH } from "./TokenSelect";
@@ -7,7 +8,6 @@ import { useApprove } from "../hooks/useApprove";
 import { useSwap } from "../hooks/useSwap";
 import { getAddressesFor, type ContractsOnChain } from "../config/addresses";
 import { toUnits, fromUnits } from "../lib/format";
-import { amountOutMin } from "../lib/slippage";
 import { maxUint256 } from "viem";
 import { useTokenBalance } from "../hooks/useTokenBalance";
 import { useSettings } from "../context/Settings";
@@ -17,62 +17,86 @@ import { humanError } from "../lib/errors";
 const short = (a?: string) =>
   a && a.startsWith("0x") ? `${a.slice(0, 6)}…${a.slice(-4)}` : a ?? "";
 
+// slippage helper (bps = basis points)
+function applySlippage(x: bigint, bps: number) {
+  return (x * BigInt(10_000 - bps)) / 10_000n;
+}
+
 export default function SwapPanel() {
   const [tokenIn, setTokenIn] = useState<string>("");
   const [tokenOut, setTokenOut] = useState<string>("");
   const [amountInStr, setAmountInStr] = useState<string>("");
-  const [slippageBps, setSlippageBps] = useState<number>(50);
-  const [unlimited, setUnlimited] = useState<boolean>(false);
-
 
   const { address: me } = useAccount();
   const chainId = useChainId() ?? 31337;
 
+  // global settings (slippage, approval mode) + toasts
+  const settings = useSettings();
+  const { push } = useToasts();
+
+  // resolve addresses for active chain
   const addresses = useMemo<ContractsOnChain | null>(() => {
-    try { return getAddressesFor(chainId); } catch { return null; }
+    try {
+      return getAddressesFor(chainId);
+    } catch {
+      return null;
+    }
   }, [chainId]);
 
   const router = addresses?.UniswapV2Router02 as `0x${string}` | undefined;
   const WETH = addresses?.WETH9 as `0x${string}` | undefined;
 
-  // Balances & decimals (safe: always called, gated internally)
+  // balances & decimals
   const inTok = useTokenBalance(tokenIn || undefined);
   const outTok = useTokenBalance(tokenOut || undefined);
-
   const decIn = inTok.decimals ?? 18;
   const decOut = outTok.decimals ?? 18;
 
+  // amount parsing
   const amountIn = useMemo(() => toUnits(amountInStr || "0", decIn), [amountInStr, decIn]);
 
-  // Quote (handles ETH <-> WETH)
+  // quote (handles ETH/WETH wraps inside hook)
   const { amountOut, isLoading: quoting, error: quoteError } = useQuote({
-    amountIn, tokenIn, tokenOut
+    amountIn,
+    tokenIn,
+    tokenOut,
   });
-  const minOut = useMemo(() => amountOutMin(amountOut, slippageBps), [amountOut, slippageBps]);
+  const minOut = useMemo(() => applySlippage(amountOut, settings.slippageBps), [amountOut, settings.slippageBps]);
 
-  // Approval needs (skip for spending ETH or WETH->ETH unwrap)
+  // approval needs
   const isInETH = tokenIn === NATIVE_ETH;
   const isOutETH = tokenOut === NATIVE_ETH;
-  const skipApproval = isInETH || (tokenIn === WETH && isOutETH);
 
-  const { allowance, isLoading: loadingAllow, refetch: refetchAllow } =
-    useAllowance(skipApproval ? undefined : (tokenIn || undefined) as `0x${string}` | undefined, router);
+  // If we implement native wrap/unwrap (WETH<->ETH) directly, no approval is needed for that path.
+  const skipApproval = isInETH || (tokenIn && WETH && tokenIn === WETH && isOutETH);
+
+  const { allowance, isLoading: loadingAllow, refetch: refetchAllow } = useAllowance(
+    skipApproval ? undefined : (tokenIn || undefined) as `0x${string}` | undefined,
+    router
+  );
 
   const { approve, isPending: approving, isMining: approvingMining, isSuccess: approved, writeError, waitError } =
     useApprove(skipApproval ? undefined : (tokenIn || undefined) as `0x${string}` | undefined);
 
-  useEffect(() => { if (approved) refetchAllow(); }, [approved, refetchAllow]);
+  useEffect(() => {
+    if (approved) {
+      refetchAllow();
+      push({ kind: "success", text: "Approval confirmed" });
+    }
+  }, [approved, refetchAllow, push]);
 
-  const needsApproval =
-    !skipApproval && !!tokenIn && !!router && amountIn > 0n && allowance < amountIn;
+  const needsApproval = !skipApproval && !!tokenIn && !!router && amountIn > 0n && allowance < amountIn;
+  const approveAmount = settings.approvalMode === "unlimited" ? maxUint256 : amountIn;
 
-  const approveAmount = unlimited ? maxUint256 : amountIn;
-
-  // Balance guard
+  // balance guard
   const insufficient = amountIn > (inTok.balance ?? 0n);
 
-  // Swap
+  // swap
   const { swap, isPending: swapping, isMining: swapMining, isSuccess: swapOk, error: swapError } = useSwap();
+
+  useEffect(() => {
+    if (swapOk) push({ kind: "success", text: "Swap complete" });
+  }, [swapOk, push]);
 
   async function onSwap() {
     if (!tokenIn || !tokenOut || amountIn === 0n || insufficient) return;
@@ -86,9 +110,19 @@ export default function SwapPanel() {
   }
 
   return (
-    <div style={{ display: "grid", gap: 12, maxWidth: 600, padding: 16, border: "1px solid #ddd", borderRadius: 8 }}>
-      <h3>Swap</h3>
+    <div
+      style={{
+        display: "grid",
+        gap: 12,
+        maxWidth: 640,
+        padding: 16,
+        border: "1px solid #ddd",
+        borderRadius: 8,
+      }}
+    >
+      <h3 style={{ margin: 0 }}>Swap</h3>
 
+      {/* FROM */}
       <TokenSelect label="From" value={tokenIn} onChange={setTokenIn} />
       <div style={{ fontSize: 12, opacity: 0.8 }}>
         Balance: {fromUnits(inTok.balance ?? 0n, decIn)} {inTok.symbol}
@@ -97,69 +131,89 @@ export default function SwapPanel() {
         placeholder="Amount in"
         value={amountInStr}
         onChange={(e) => setAmountInStr(e.target.value)}
+        style={{ padding: 10 }}
       />
       {insufficient && amountIn > 0n && (
         <div style={{ color: "crimson", fontSize: 12 }}>Insufficient balance</div>
       )}
 
+      {/* TO */}
       <TokenSelect label="To" value={tokenOut} onChange={setTokenOut} />
       <div style={{ fontSize: 12, opacity: 0.8 }}>
         Balance: {fromUnits(outTok.balance ?? 0n, decOut)} {outTok.symbol}
       </div>
 
-      <div>
-        <div><b>Estimated Out:</b> {quoting ? "…" : fromUnits(amountOut, decOut)}</div>
-        <div><b>Min Out ({(slippageBps / 100).toFixed(2)}%):</b> {fromUnits(minOut, decOut)}</div>
-        {quoteError && <div style={{ color: "crimson" }}>{quoteError.message}</div>}
+      {/* Quote */}
+      <div style={{ display: "grid", gap: 4 }}>
+        <div>
+          <b>Estimated Out:</b> {quoting ? "…" : fromUnits(amountOut, decOut)}
+        </div>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <div>
+            <b>Min Out ({(settings.slippageBps / 100).toFixed(2)}%):</b>{" "}
+            {fromUnits(minOut, decOut)}
+          </div>
+          <span style={{ fontSize: 12, opacity: 0.8 }}>
+            Slippage ·{" "}
+            <button onClick={() => settings.setOpen(true)} style={{ fontSize: 12 }}>
+              Change
+            </button>
+          </span>
+        </div>
+        {quoteError && <div style={{ color: "crimson" }}>{humanError(quoteError)}</div>}
       </div>
 
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <label>Slippage (bps):</label>
-        <input
-          type="number"
-          min={0}
-          step={10}
-          value={slippageBps}
-          onChange={(e) => setSlippageBps(Number(e.target.value))}
-          style={{ width: 120 }}
-        />
-        <small>(50 = 0.50%)</small>
-      </div>
-
-      {/* Approvals */}
-      {(!skipApproval && (needsApproval || unlimited)) && (
-        <div style={{ background: "#f8f8f8", padding: 12, borderRadius: 8, fontSize: 13 }}>
-          <b>Approval details</b>
+      {/* Approval details */}
+      {!skipApproval && needsApproval && (
+        <div
+          style={{
+            background: "#f8f8f8",
+            padding: 12,
+            borderRadius: 8,
+            fontSize: 13,
+            border: "1px solid #eee",
+          }}
+        >
+          <b>Approval required</b>
           <div>Spender (Router): <code title={router}>{short(router)}</code></div>
           <div>Current allowance: {fromUnits(allowance, decIn)}</div>
           <div>
-            This approval will set your spending cap to{" "}
-            <b>{unlimited ? "Unlimited" : fromUnits(approveAmount, decIn)}</b>.
+            This will set your spending cap to{" "}
+            <b>{settings.approvalMode === "unlimited" ? "Unlimited" : fromUnits(approveAmount, decIn)}</b>.
+          </div>
+          <div style={{ fontSize: 12, opacity: 0.8, marginTop: 6 }}>
+            Mode: <code>{settings.approvalMode}</code> (change in Settings)
           </div>
         </div>
       )}
 
-      {/* Controls */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-        {!skipApproval && (
-          <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <input type="checkbox" checked={unlimited} onChange={(e) => setUnlimited(e.target.checked)} />
-            Unlimited approval
-          </label>
-        )}
-
-        {needsApproval ? (
+      {/* Actions */}
+      <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+        {!skipApproval && needsApproval ? (
           <button
             onClick={() => approve(router!, approveAmount)}
-            disabled={!router || approving || approvingMining || loadingAllow || amountIn === 0n || insufficient}
+            disabled={
+              !router ||
+              approving ||
+              approvingMining ||
+              loadingAllow ||
+              amountIn === 0n ||
+              insufficient
+            }
           >
-            {approving ? "Confirm in wallet…" : approvingMining ? "Approving…" : `Approve${unlimited ? " (Unlimited)" : ""}`}
+            {approving ? "Confirm in wallet…" : approvingMining ? "Approving…" : "Approve"}
           </button>
         ) : (
           <button
             onClick={onSwap}
             disabled={
-              swapping || swapMining || !tokenIn || !tokenOut || amountIn === 0n || !!quoteError || insufficient
+              swapping ||
+              swapMining ||
+              !tokenIn ||
+              !tokenOut ||
+              amountIn === 0n ||
+              !!quoteError ||
+              insufficient
             }
           >
             {swapping ? "Confirm in wallet…" : swapMining ? "Swapping…" : "Swap"}
@@ -168,9 +222,7 @@ export default function SwapPanel() {
       </div>
 
       {(writeError || waitError || swapError) && (
-        <div style={{ color: "crimson" }}>
-          {(writeError || waitError || swapError)?.message}
-        </div>
+        <div style={{ color: "crimson" }}>{humanError(writeError || waitError || swapError)}</div>
       )}
 
       {swapOk && <div style={{ color: "green" }}>Swap complete ✅</div>}

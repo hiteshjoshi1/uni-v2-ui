@@ -29,6 +29,7 @@ export default function TokenSelect({ value, onChange, label }: Props) {
       {label && <label>{label}</label>}
       <select value={value ?? ""} onChange={(e) => onChange(e.target.value)}>
         <option value="" disabled>Select token…</option>
+        <option value={NATIVE_ETH}>ETH (native)</option>
         {list.map((t) => (
           <option key={t.symbol} value={t.address}>{t.symbol} {t.address ? `(${t.address.slice(0, 6)}…${t.address.slice(-4)})` : ""}</option>
         ))}

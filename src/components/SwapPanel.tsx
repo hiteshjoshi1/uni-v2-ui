@@ -10,6 +10,9 @@ import { toUnits, fromUnits } from "../lib/format";
 import { amountOutMin } from "../lib/slippage";
 import { maxUint256 } from "viem";
 import { useTokenBalance } from "../hooks/useTokenBalance";
+import { useSettings } from "../context/Settings";
+import { useToasts } from "../context/Toasts";
+import { humanError } from "../lib/errors";
 
 const short = (a?: string) =>
   a && a.startsWith("0x") ? `${a.slice(0, 6)}…${a.slice(-4)}` : a ?? "";
@@ -20,6 +23,7 @@ export default function SwapPanel() {
   const [amountInStr, setAmountInStr] = useState<string>("");
   const [slippageBps, setSlippageBps] = useState<number>(50);
   const [unlimited, setUnlimited] = useState<boolean>(false);
+
 
   const { address: me } = useAccount();
   const chainId = useChainId() ?? 31337;

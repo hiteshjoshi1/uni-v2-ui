@@ -2,6 +2,7 @@ import { NavLink, Link } from "react-router-dom";
 import { useAccount, useDisconnect } from "wagmi";
 import WalletButton from "./WalletButton";
 import { useAppNetwork } from "../context/AppNetwork";
+import { useSettings } from "../context/Settings";
 
 function short(a?: string) {
   return a && a.startsWith("0x") ? `${a.slice(0, 6)}…${a.slice(-4)}` : a ?? "";
@@ -26,6 +27,7 @@ export default function NavBar() {
   const { chainId } = useAppNetwork();
   const { address, isConnected } = useAccount();
   const { disconnect } = useDisconnect();
+  const settings = useSettings();
 
   return (
     <header style={{
@@ -73,6 +75,7 @@ export default function NavBar() {
             {short(address)}
           </span>
         )}
+        <button onClick={() => settings.setOpen(true)}>Settings</button>
 
         {/* Then Connect / Disconnect */}
         {isConnected ? (

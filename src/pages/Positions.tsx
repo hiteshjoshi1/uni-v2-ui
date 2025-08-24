@@ -1,9 +1,10 @@
 import { useMemo } from "react";
 import { useAccount } from "wagmi";
 import { useAppNetwork } from "../context/AppNetwork";
-import { useUserPositions } from "../hooks/useUserPositions";
+import { useUserPositions, type UserPosition } from "../hooks/useUserPositions";
 import { useFactoryPairs } from "../hooks/useFactoryPairs";
 import { fromUnits } from "../lib/format";
+import { useNavigate } from "react-router-dom";
 
 export default function PositionsPage() {
   const { addresses, supported, chainId } = useAppNetwork();
@@ -16,6 +17,8 @@ export default function PositionsPage() {
     return maybe.filter((p): p is `0x${string}` => !!p);
   }, [addresses]);
 
+  const navigate = useNavigate();
+
   // discover from factory
   const { pairs: fromFactory, isLoading: loadingPairs, error: pairsError } = useFactoryPairs();
 
@@ -27,6 +30,32 @@ export default function PositionsPage() {
     return Array.from(m.values());
   }, [prelisted, fromFactory]);
 
+
+  // in Positions page
+  async function addLpToMetaMask(p: UserPosition) {
+    try {
+      const ethereum = (window as any).ethereum;
+      if (!ethereum?.request) return alert("No wallet found.");
+
+      await ethereum.request({
+        method: "wallet_watchAsset",
+        params: {
+          type: "ERC20",
+          options: {
+            address: p.pair,     // LP token (pair) address
+            symbol: "UNI-V2",    // must match on-chain symbol
+            decimals: 18,
+            // Optional: unique icon per pool to help distinguish:
+            // image: `https://yourcdn.example/lp/${p.symbol0}-${p.symbol1}.png`,
+          },
+        },
+      });
+    } catch (e: any) {
+      alert(e?.message ?? "Failed to add token");
+    }
+  }
+
+
   // read positions
   const { positions, isLoading, error } = useUserPositions(allPairs);
 
@@ -36,27 +65,7 @@ export default function PositionsPage() {
   if (!supported) return <main style={{ padding: 16 }}><b>Wrong network</b> (chain {chainId})</main>;
   if (!isConnected) return <main style={{ padding: 16 }}>Connect your wallet to view your liquidity.</main>;
 
-  async function addLpToMetaMask(pair: `0x${string}`) {
-    try {
-      const ethereum = (window as any).ethereum;
-      if (!ethereum?.request) return alert("No wallet found.");
-      // LP tokens are ERC20 with 18 decimals; symbol often “UNI-V2”
-      const wasAdded = await ethereum.request({
-        method: "wallet_watchAsset",
-        params: {
-          type: "ERC20",
-          options: {
-            address: pair,
-            symbol: "UNI-V2", // keep ≤11 chars; generic but accurate
-            decimals: 18,
-          },
-        },
-      });
-      if (!wasAdded) alert("Token not added.");
-    } catch (e: any) {
-      alert(e?.message ?? "Failed to add token");
-    }
-  }
+
 
   return (
     <main style={{ padding: 16 }}>
@@ -95,8 +104,8 @@ export default function PositionsPage() {
                   <td style={td}>{fromUnits(p.amount1, p.decimals1)} {p.symbol1}</td>
                   <td style={td}>
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                      <button onClick={() => addLpToMetaMask(p.pair)}>Add LP to MetaMask</button>
-                      <button disabled>Remove</button>
+                      <button onClick={() => addLpToMetaMask(p)}>Add LP to MetaMask</button>
+                      <button onClick={() => navigate("/remove", { state: { pair: p.pair } })}>Remove</button>
                     </div>
                   </td>
                 </tr>

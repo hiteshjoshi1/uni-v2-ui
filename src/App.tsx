@@ -7,8 +7,6 @@ import PositionsPage from "./pages/Positions";
 import TokensPage from "./pages/Tokens";
 import RemoveLiquidityPage from "./pages/RemoveLiquidity";
 import { AppNetworkProvider } from "./context/AppNetwork";
-
-// 👇 added
 import { SettingsProvider } from "./context/Settings";
 import { ToastsProvider } from "./context/Toasts";
 import WrongNetworkBanner from "./components/WrongNetworkBanner";

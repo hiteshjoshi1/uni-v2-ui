@@ -14,12 +14,15 @@ import { useSettings } from "../context/Settings";
 import { useToasts } from "../context/Toasts";
 import { humanError } from "../lib/errors";
 
-const short = (a?: string) =>
-  a && a.startsWith("0x") ? `${a.slice(0, 6)}…${a.slice(-4)}` : a ?? "";
+const shortenAddress = (adr?: string) =>
+  adr && adr.startsWith("0x") ? `${adr.slice(0, 6)}…${adr.slice(-4)}` : adr ?? "";
 
 // slippage helper (bps = basis points)
-function applySlippage(x: bigint, bps: number) {
-  return (x * BigInt(10_000 - bps)) / 10_000n;
+function applySlippage(amount: bigint, bps: number) {
+  // x−x⋅0.005 = x(1−0.005) = 0.995x
+  // 1% = 100 bps, 100% = 10,000 bps 
+  // x (1- 5/100) =  x (1- 50/ 10, 000)
+  return (amount * BigInt(10_000 - bps)) / 10_000n;
 }
 
 export default function SwapPanel() {
@@ -27,7 +30,9 @@ export default function SwapPanel() {
   const [tokenOut, setTokenOut] = useState<string>("");
   const [amountInStr, setAmountInStr] = useState<string>("");
 
-  const { address: me } = useAccount();
+  const { address } = useAccount();
+
+
   const chainId = useChainId() ?? 31337;
 
   // global settings (slippage, approval mode) + toasts
@@ -105,7 +110,7 @@ export default function SwapPanel() {
       amountOutMin: minOut,
       tokenIn,
       tokenOut,
-      to: me as `0x${string}`,
+      to: address as `0x${string}`,
     });
   }
 
@@ -175,7 +180,7 @@ export default function SwapPanel() {
           }}
         >
           <b>Approval required</b>
-          <div>Spender (Router): <code title={router}>{short(router)}</code></div>
+          <div>Spender (Router): <code title={router}>{shortenAddress(router)}</code></div>
           <div>Current allowance: {fromUnits(allowance, decIn)}</div>
           <div>
             This will set your spending cap to{" "}

@@ -90,12 +90,14 @@ export default function SwapPanel() {
   useEffect(() => {
     if (approved && !approveNotifiedRef.current) {
       approveNotifiedRef.current = true;
-      push({ kind: "success", text: "Approval confirmed" }, "approve"); // dedupe-key
+      push({ kind: "success", text: "Approval confirmed" }); // ← removed dedupe key
     }
     if (!approving && !approvingMining && !approved) {
-      approveNotifiedRef.current = false; // reset when next approval cycle starts
+      approveNotifiedRef.current = false;
     }
   }, [approved, approving, approvingMining, push]);
+
+
 
   const needsApproval = !skipApproval && !!tokenIn && !!router && amountIn > 0n && allowance < amountIn;
   const approveAmount = settings.approvalMode === "unlimited" ? maxUint256 : amountIn;
@@ -106,16 +108,17 @@ export default function SwapPanel() {
   // swap
   const { swap, isPending: swapping, isMining: swapMining, isSuccess: swapOk, error: swapError } = useSwap();
 
+  // after swap success: toast once, clear input, refresh balances
   useEffect(() => {
     if (swapOk && !swapping && !swapMining && !swapNotifiedRef.current) {
       swapNotifiedRef.current = true;
-      push({ kind: "success", text: "Swap complete" }, "swap"); // dedupe-key
-      setAmountInStr("");          // ✅ clear only the amount field
-      inTok.refetch?.();           // ✅ refresh balances
+      push({ kind: "success", text: "Swap complete" });      // ← removed dedupe key
+      setAmountInStr("");
+      inTok.refetch?.();
       outTok.refetch?.();
     }
     if (!swapping && !swapMining && !swapOk) {
-      swapNotifiedRef.current = false;     // reset when next swap cycle starts
+      swapNotifiedRef.current = false;
     }
   }, [swapOk, swapping, swapMining, push]);
 

@@ -1,5 +1,5 @@
 // src/components/SwapPanel.tsx
-import { useEffect, useMemo, useState } from "react";
+import { useRef, useEffect, useMemo, useState } from "react";
 import { useAccount, useChainId } from "wagmi";
 import TokenSelect, { NATIVE_ETH } from "./TokenSelect";
 import { useQuote } from "../hooks/useQuote";
@@ -38,6 +38,9 @@ export default function SwapPanel() {
   // global settings (slippage, approval mode) + toasts
   const settings = useSettings();
   const { push } = useToasts();
+  const swapNotifiedRef = useRef(false);
+  const approveNotifiedRef = useRef(false);
+
 
   // resolve addresses for active chain
   const addresses = useMemo<ContractsOnChain | null>(() => {
@@ -83,12 +86,16 @@ export default function SwapPanel() {
   const { approve, isPending: approving, isMining: approvingMining, isSuccess: approved, writeError, waitError } =
     useApprove(skipApproval ? undefined : (tokenIn || undefined) as `0x${string}` | undefined);
 
+  // after approval success: toast once
   useEffect(() => {
-    if (approved) {
-      refetchAllow();
-      push({ kind: "success", text: "Approval confirmed" });
+    if (approved && !approveNotifiedRef.current) {
+      approveNotifiedRef.current = true;
+      push({ kind: "success", text: "Approval confirmed" }, "approve"); // dedupe-key
     }
-  }, [approved, refetchAllow, push]);
+    if (!approving && !approvingMining && !approved) {
+      approveNotifiedRef.current = false; // reset when next approval cycle starts
+    }
+  }, [approved, approving, approvingMining, push]);
 
   const needsApproval = !skipApproval && !!tokenIn && !!router && amountIn > 0n && allowance < amountIn;
   const approveAmount = settings.approvalMode === "unlimited" ? maxUint256 : amountIn;
@@ -100,8 +107,17 @@ export default function SwapPanel() {
   const { swap, isPending: swapping, isMining: swapMining, isSuccess: swapOk, error: swapError } = useSwap();
 
   useEffect(() => {
-    if (swapOk) push({ kind: "success", text: "Swap complete" });
-  }, [swapOk, push]);
+    if (swapOk && !swapping && !swapMining && !swapNotifiedRef.current) {
+      swapNotifiedRef.current = true;
+      push({ kind: "success", text: "Swap complete" }, "swap"); // dedupe-key
+      setAmountInStr("");          // ✅ clear only the amount field
+      inTok.refetch?.();           // ✅ refresh balances
+      outTok.refetch?.();
+    }
+    if (!swapping && !swapMining && !swapOk) {
+      swapNotifiedRef.current = false;     // reset when next swap cycle starts
+    }
+  }, [swapOk, swapping, swapMining, push]);
 
   async function onSwap() {
     if (!tokenIn || !tokenOut || amountIn === 0n || insufficient) return;

@@ -1,47 +1,62 @@
-import { useMemo } from "react";
-import { useAccount, useBalance, useReadContracts } from "wagmi";
+import { useAccount, useBlockNumber, useChainId, useReadContract, useBalance } from "wagmi";
 import type { Abi } from "viem";
-import { NATIVE_ETH } from "../components/TokenSelect";
 
 const ERC20_ABI = [
   { type: "function", name: "symbol", stateMutability: "view", inputs: [], outputs: [{ type: "string" }] },
   { type: "function", name: "decimals", stateMutability: "view", inputs: [], outputs: [{ type: "uint8" }] },
-  { type: "function", name: "balanceOf", stateMutability: "view", inputs: [{ name: "a", type: "address" }], outputs: [{ type: "uint256" }] },
+  { type: "function", name: "balanceOf", stateMutability: "view", inputs: [{ type: "address" }], outputs: [{ type: "uint256" }] },
 ] as const;
 
-export function useTokenBalance(addrOrEth?: string) {
-  const { address } = useAccount();
-  const isEth = addrOrEth === NATIVE_ETH;
+export function useTokenBalance(addr?: string) {
+  const { address: me } = useAccount();
+  const chainId = useChainId() ?? 31337;
 
-  // Native ETH
+  const isNative = addr === "ETH";
+  const token = addr as `0x${string}` | undefined;
+
+  // watch blocks so we refresh after txs
+  const { data: _block } = useBlockNumber({ chainId, watch: true });
+
+  // native ETH
   const native = useBalance({
-    address,
-    query: { enabled: isEth && !!address },
+    address: me,
+    chainId,
+    query: { enabled: isNative && !!me },
   });
 
-  // ERC20 (symbol, decimals, balanceOf)
-  const enabledErc = !!address && !!addrOrEth && !isEth && addrOrEth.startsWith("0x");
-  const contracts = useMemo(() => {
-    if (!enabledErc) return [];
-    const t = addrOrEth as `0x${string}`;
-    return [
-      { address: t, abi: ERC20_ABI as unknown as Abi, functionName: "symbol" },
-      { address: t, abi: ERC20_ABI as unknown as Abi, functionName: "decimals" },
-      { address: t, abi: ERC20_ABI as unknown as Abi, functionName: "balanceOf", args: [address!] },
-    ];
-  }, [enabledErc, addrOrEth, address]);
-
-  const erc = useReadContracts({
-    contracts: contracts as any,
-    query: { enabled: enabledErc },
+  // ERC20 reads
+  const symbol = useReadContract({
+    address: token,
+    abi: ERC20_ABI as unknown as Abi,
+    functionName: "symbol",
+    query: { enabled: !isNative && !!token },
+  });
+  const decimals = useReadContract({
+    address: token,
+    abi: ERC20_ABI as unknown as Abi,
+    functionName: "decimals",
+    query: { enabled: !isNative && !!token },
+  });
+  const ercBal = useReadContract({
+    address: token,
+    abi: ERC20_ABI as unknown as Abi,
+    functionName: "balanceOf",
+    args: me ? [me] : undefined,
+    query: { enabled: !isNative && !!token && !!me },
   });
 
-  const symbol = isEth ? "ETH" : ((erc.data?.[0]?.result as string) ?? "TOKEN");
-  const decimals = isEth ? 18 : Number((erc.data?.[1]?.result as number) ?? 18);
-  const balance = isEth ? (native.data?.value ?? 0n) : ((erc.data?.[2]?.result as bigint) ?? 0n);
+  // refetch on every new block
+  const refetch = () => {
+    native.refetch?.();
+    symbol.refetch?.();
+    decimals.refetch?.();
+    ercBal.refetch?.();
+  };
 
-  const isLoading = isEth ? native.isLoading : erc.isLoading;
-  const error = (isEth ? native.error : erc.error) as Error | null;
-
-  return { symbol, decimals, balance, isLoading, error };
+  return {
+    symbol: isNative ? "ETH" : (symbol.data as string) ?? "",
+    decimals: isNative ? 18 : Number(decimals.data ?? 18),
+    balance: isNative ? (native.data?.value ?? 0n) : ((ercBal.data as bigint) ?? 0n),
+    refetch,
+  };
 }

@@ -106,15 +106,21 @@ export default function RemoveLiquidityPage() {
       <h3 className="text-xl font-semibold">Remove Liquidity</h3>
 
       {(loadingPairs || loadingPos) && <div>Loading pools…</div>}
-      {(pairsError || posError) && <div style={{ color: "crimson" }}>{(pairsError || posError)!.message}</div>}
+      {(pairsError || posError) && (
+        <div className="text-red-600">{(pairsError || posError)!.message}</div>
+      )}
       {mine.length === 0 && !(loadingPairs || loadingPos) && <div>You don’t have any LP tokens on this network.</div>}
 
       {mine.length > 0 && (
         <>
           {/* Pair selector */}
-          <div style={{ display: "grid", gap: 6 }}>
+          <div className="grid gap-1.5">
             <label>Choose a pool</label>
-            <select value={sel} onChange={(e) => setSel(e.target.value)} style={{ padding: 8 }}>
+            <select
+              value={sel}
+              onChange={(e) => setSel(e.target.value)}
+              className="p-2 border rounded"
+            >
               {mine.map(x => (
                 <option key={x.pair} value={x.pair}>
                   {x.symbol0}-{x.symbol1} • {short(x.pair)}
@@ -125,7 +131,7 @@ export default function RemoveLiquidityPage() {
 
           {/* Summary */}
           {p && (
-            <div style={{ border: "1px solid #eee", borderRadius: 8, padding: 12, display: "grid", gap: 8 }}>
+            <div className="border rounded p-3 grid gap-2">
               <div>
                 <b>LP balance:</b> {fromUnits(p.lpBalance, 18)} UNI-V2
                 {"  "}· <b>Share:</b> {(p.shareBps / 100).toFixed(2)}%
@@ -138,14 +144,14 @@ export default function RemoveLiquidityPage() {
           )}
 
           {/* Controls */}
-          <div style={{ border: "1px solid #eee", borderRadius: 8, padding: 12, display: "grid", gap: 12 }}>
-            <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+          <div className="border rounded p-3 grid gap-3">
+            <div className="flex gap-2.5 items-center flex-wrap">
               <label>Percentage:</label>
               <input
                 type="range" min={1} max={10000} step={1}
                 value={pct}
                 onChange={(e) => setPct(Number(e.target.value))}
-                style={{ width: 260 }}
+                className="w-[260px]"
               />
               <span>{(pct / 100).toFixed(2)}%</span>
               {[2500, 5000, 7500, 10000].map(v => (
@@ -153,13 +159,16 @@ export default function RemoveLiquidityPage() {
               ))}
             </div>
 
-            <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+            <div className="flex gap-4 flex-wrap">
               <div>LP to burn: <b>{fromUnits(liq, 18)} UNI-V2</b></div>
-              <div>Min out: <b>{fromUnits(min0, p?.decimals0 ?? 18)} {p?.symbol0}</b> + <b>{fromUnits(min1, p?.decimals1 ?? 18)} {p?.symbol1}</b></div>
+              <div>
+                Min out: <b>{fromUnits(min0, p?.decimals0 ?? 18)} {p?.symbol0}</b> + {" "}
+                <b>{fromUnits(min1, p?.decimals1 ?? 18)} {p?.symbol1}</b>
+              </div>
             </div>
 
             {p && WETH && (
-              <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <label className="flex items-center gap-2">
                 <input
                   type="checkbox"
                   checked={unwrap}
@@ -190,8 +199,8 @@ export default function RemoveLiquidityPage() {
               {isPending ? "Confirm in wallet…" : isMining ? "Removing…" : "Remove"}
             </button>
 
-            {error && <div style={{ color: "crimson" }}>{error.message}</div>}
-            {isSuccess && <div style={{ color: "green" }}>Removed ✅</div>}
+            {error && <div className="text-red-600">{error.message}</div>}
+            {isSuccess && <div className="text-green-600">Removed ✅</div>}
           </div>
         </>
       )}

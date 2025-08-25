@@ -25,19 +25,26 @@ export default function TokenSelect({ value, onChange, label }: Props) {
   }, [addrMap]);
 
   return (
-    <div style={{ display: "grid", gap: 8 }}>
+    <div className="grid gap-2">
       {label && <label>{label}</label>}
-      <select value={value ?? ""} onChange={(e) => onChange(e.target.value)}>
+      <select
+        value={value ?? ""}
+        onChange={(e) => onChange(e.target.value)}
+        className="p-2 border rounded"
+      >
         <option value="" disabled>Select token…</option>
         <option value={NATIVE_ETH}>ETH (native)</option>
         {list.map((t) => (
-          <option key={t.symbol} value={t.address}>{t.symbol} {t.address ? `(${t.address.slice(0, 6)}…${t.address.slice(-4)})` : ""}</option>
+          <option key={t.symbol} value={t.address}>
+            {t.symbol} {t.address ? `(${t.address.slice(0, 6)}…${t.address.slice(-4)})` : ""}
+          </option>
         ))}
       </select>
       <input
         placeholder="Or paste token address 0x…"
         value={value ?? ""}
         onChange={(e) => onChange(e.target.value)}
+        className="p-2 border rounded"
       />
     </div>
   );

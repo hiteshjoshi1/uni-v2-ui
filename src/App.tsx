@@ -28,7 +28,7 @@ export default function App() {
               <Route path="/positions" element={<PositionsPage />} />
               <Route path="/remove" element={<RemoveLiquidityPage />} />
               <Route path="/tokens" element={<TokensPage />} />
-              <Route path="*" element={<div style={{ padding: 16 }}>Not found</div>} />
+              <Route path="*" element={<div className="p-4">Not found</div>} />
             </Routes>
             <SettingsModal />
             <ToastsHost />

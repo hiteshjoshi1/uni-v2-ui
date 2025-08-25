@@ -41,7 +41,7 @@ export default function WrongNetworkBanner() {
   }
 
   return (
-    <div style={{ background: "#fff7ed", borderBottom: "1px solid #fde68a", padding: "8px 12px", display: "flex", gap: 12, alignItems: "center" }}>
+    <div className="bg-amber-50 border-b border-amber-200 px-3 py-2 flex gap-3 items-center">
       <b>Wrong network:</b> connected to {chainId}. Switch to Anvil or Sepolia.
       <button onClick={() => switchOrAdd(31337)}>Switch to Anvil</button>
       <button onClick={() => switchOrAdd(11155111)}>Switch to Sepolia</button>

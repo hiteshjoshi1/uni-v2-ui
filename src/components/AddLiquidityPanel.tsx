@@ -1,5 +1,5 @@
 // src/components/AddLiquidityPanel.tsx
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useAccount, useChainId } from "wagmi";
 import TokenSelect, { NATIVE_ETH } from "./TokenSelect";
 import { getAddressesFor, type ContractsOnChain } from "../config/addresses";
@@ -78,8 +78,44 @@ export default function AddLiquidityPanel() {
   const { approve: approveB, isPending: apPendingB, isMining: apMiningB, isSuccess: apOkB, writeError: apErrB, waitError: apWaitErrB } =
     useApprove(isBETH ? undefined : (tokenB || undefined) as `0x${string}` | undefined);
 
-  useEffect(() => { if (apOkA) { refetchA(); push({ kind: "success", text: "Approved token A" }); } }, [apOkA, refetchA, push]);
-  useEffect(() => { if (apOkB) { refetchB(); push({ kind: "success", text: "Approved token B" }); } }, [apOkB, refetchB, push]);
+  // add liquidity (hook handles ETH/Token vs Token/Token internally)
+  const { addLiquidity, isPending, isMining, isSuccess, error } = useAddLiquidity();
+
+  // --------- toasts (strict-mode proof) ----------
+  const approvedANote = useRef(false);
+  const approvedBNote = useRef(false);
+  const suppliedNote = useRef(false);
+
+  useEffect(() => {
+    if (apOkA && !approvedANote.current) {
+      approvedANote.current = true;
+      push({ kind: "success", text: "Approved token A" }, "approve:A");
+      refetchA?.();
+    }
+    if (!apPendingA && !apMiningA && !apOkA) approvedANote.current = false;
+  }, [apOkA, apPendingA, apMiningA, refetchA, push]);
+
+  useEffect(() => {
+    if (apOkB && !approvedBNote.current) {
+      approvedBNote.current = true;
+      push({ kind: "success", text: "Approved token B" }, "approve:B");
+      refetchB?.();
+    }
+    if (!apPendingB && !apMiningB && !apOkB) approvedBNote.current = false;
+  }, [apOkB, apPendingB, apMiningB, refetchB, push]);
+
+  useEffect(() => {
+    if (isSuccess && !isPending && !isMining && !suppliedNote.current) {
+      suppliedNote.current = true;
+      push({ kind: "success", text: "Liquidity supplied" }, "supply:ok");
+      setAmountAStr("");
+      setAmountBStr("");
+      aTok.refetch?.();
+      bTok.refetch?.();
+    }
+    if (!isPending && !isMining && !isSuccess) suppliedNote.current = false;
+  }, [isSuccess, isPending, isMining, aTok, bTok, push]);
+  // ------------------------------------------------
 
   const approveAmountA = settings.approvalMode === "unlimited" ? maxUint256 : amountADesired;
   const approveAmountB = settings.approvalMode === "unlimited" ? maxUint256 : amountBDesired;
@@ -90,9 +126,6 @@ export default function AddLiquidityPanel() {
   // balance guards
   const insufficientA = amountADesired > (aTok.balance ?? 0n);
   const insufficientB = amountBDesired > (bTok.balance ?? 0n);
-
-  // add liquidity (hook handles ETH/Token vs Token/Token internally)
-  const { addLiquidity, isPending, isMining, isSuccess, error } = useAddLiquidity();
 
   async function onSupply() {
     if (!tokenA || !tokenB) return;

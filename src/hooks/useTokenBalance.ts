@@ -1,4 +1,4 @@
-import { useAccount, useBlockNumber, useChainId, useReadContract, useBalance } from "wagmi";
+import { useAccount, useBlockNumber, useChainId, useReadContract, useBalance, useWatchBlocks } from "wagmi";
 import type { Abi } from "viem";
 
 const ERC20_ABI = [
@@ -45,18 +45,30 @@ export function useTokenBalance(addr?: string) {
     query: { enabled: !isNative && !!token && !!me },
   });
 
-  // refetch on every new block
-  const refetch = () => {
-    native.refetch?.();
-    symbol.refetch?.();
-    decimals.refetch?.();
-    ercBal.refetch?.();
-  };
+  useWatchBlocks({
+    chainId,
+    enabled: !!me,
+    onBlock() {
+      native.refetch?.();
+      symbol.refetch?.();
+      decimals.refetch?.();
+      ercBal.refetch?.();
+    },
+  });
+
+
+
 
   return {
     symbol: isNative ? "ETH" : (symbol.data as string) ?? "",
     decimals: isNative ? 18 : Number(decimals.data ?? 18),
     balance: isNative ? (native.data?.value ?? 0n) : ((ercBal.data as bigint) ?? 0n),
-    refetch,
+    // refetch on every new block
+    refetch() {
+      native.refetch?.();
+      symbol.refetch?.();
+      decimals.refetch?.();
+      ercBal.refetch?.();
+    },
   };
 }

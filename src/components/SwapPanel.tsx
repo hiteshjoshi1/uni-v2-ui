@@ -93,11 +93,9 @@ export default function SwapPanel() {
   useEffect(() => {
     if (approved && !approveNotifiedRef.current) {
       approveNotifiedRef.current = true;
-      push({ kind: "success", text: "Approval confirmed" }); // ← removed dedupe key
+      push({ kind: "success", text: "Approval confirmed" }, "approve:in"); // ← key
     }
-    if (!approving && !approvingMining && !approved) {
-      approveNotifiedRef.current = false;
-    }
+    if (!approving && !approvingMining && !approved) approveNotifiedRef.current = false;
   }, [approved, approving, approvingMining, push]);
 
 
@@ -112,17 +110,16 @@ export default function SwapPanel() {
   const { swap, isPending: swapping, isMining: swapMining, isSuccess: swapOk, error: swapError } = useSwap();
 
   // after swap success: toast once, clear input, refresh balances
+  // after swap success
   useEffect(() => {
     if (swapOk && !swapping && !swapMining && !swapNotifiedRef.current) {
       swapNotifiedRef.current = true;
-      push({ kind: "success", text: "Swap complete" });      // ← removed dedupe key
+      push({ kind: "success", text: "Swap complete" }, "swap:ok"); // ← key
       setAmountInStr("");
       inTok.refetch?.();
       outTok.refetch?.();
     }
-    if (!swapping && !swapMining && !swapOk) {
-      swapNotifiedRef.current = false;
-    }
+    if (!swapping && !swapMining && !swapOk) swapNotifiedRef.current = false;
   }, [swapOk, swapping, swapMining, push]);
 
   async function onSwap() {

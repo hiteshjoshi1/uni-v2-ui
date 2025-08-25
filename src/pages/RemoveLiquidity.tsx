@@ -64,7 +64,7 @@ export default function RemoveLiquidityPage() {
 
   // 4) remove settings
   const [pct, setPct] = useState<number>(10000); // 100%
-  const [slipBps, setSlipBps] = useState<number>(50); // 0.50%
+  const [slipBps] = useState<number>(50); // 0.50%
   const [unwrap, setUnwrap] = useState<boolean>(true);
   useEffect(() => {
     if (!p || !WETH) return;
@@ -98,12 +98,12 @@ export default function RemoveLiquidityPage() {
     });
   }
 
-  if (!supported) return <main style={{ padding: 16 }}><b>Wrong network</b> (chain {chainId})</main>;
-  if (!isConnected) return <main style={{ padding: 16 }}>Connect your wallet to remove liquidity.</main>;
+  if (!supported) return <main className="p-4 text-center"><b>Wrong network</b> (chain {chainId})</main>;
+  if (!isConnected) return <main className="p-4 text-center">Connect your wallet to remove liquidity.</main>;
 
   return (
-    <main style={{ padding: 16, display: "grid", gap: 16, maxWidth: 900 }}>
-      <h3>Remove Liquidity</h3>
+    <main className="p-4 grid gap-4 max-w-3xl mx-auto">
+      <h3 className="text-xl font-semibold">Remove Liquidity</h3>
 
       {(loadingPairs || loadingPos) && <div>Loading pools…</div>}
       {(pairsError || posError) && <div style={{ color: "crimson" }}>{(pairsError || posError)!.message}</div>}

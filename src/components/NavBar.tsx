@@ -3,6 +3,8 @@ import { useAccount, useDisconnect } from "wagmi";
 import WalletButton from "./WalletButton";
 import { useAppNetwork } from "../context/AppNetwork";
 import { useSettings } from "../context/Settings";
+import Button from "./ui/Button";
+import { clsx } from "clsx";
 
 function short(a?: string) {
   return a && a.startsWith("0x") ? `${a.slice(0, 6)}…${a.slice(-4)}` : a ?? "";
@@ -30,26 +32,24 @@ export default function NavBar() {
   const settings = useSettings();
 
   return (
-    <header style={{
-      display: "flex", alignItems: "center", gap: 16,
-      padding: "10px 16px", borderBottom: "1px solid #eee"
-    }}>
-      <Link to="/" style={{ fontWeight: 700, textDecoration: "none", color: "#111" }}>
+    <header className="flex items-center gap-4 p-4 border-b">
+      <Link to="/" className="font-bold text-gray-900 no-underline">
         uni-v2 demo
       </Link>
 
-      <nav style={{ display: "flex", gap: 12 }}>
-        {tabs.map(t => (
+      <nav className="flex gap-3">
+        {tabs.map((t) => (
           <NavLink
             key={t.to}
             to={t.to}
-            style={({ isActive }) => ({
-              padding: "6px 10px",
-              borderRadius: 8,
-              textDecoration: "none",
-              color: isActive ? "#111" : "#555",
-              background: isActive ? "#f2f2f2" : "transparent",
-            })}
+            className={({ isActive }) =>
+              clsx(
+                "px-3 py-1 rounded-md no-underline",
+                isActive
+                  ? "bg-gray-200 text-gray-900"
+                  : "text-gray-600 hover:text-gray-900"
+              )
+            }
           >
             {t.label}
           </NavLink>
@@ -57,29 +57,24 @@ export default function NavBar() {
       </nav>
 
       {/* Right corner */}
-      <div style={{ marginLeft: "auto", display: "flex", gap: 10, alignItems: "center" }}>
-        {/* Chain first */}
-        <span style={{
-          fontSize: 12, padding: "4px 8px", border: "1px solid #ddd",
-          borderRadius: 20, background: "#fafafa"
-        }}>
+      <div className="ml-auto flex items-center gap-2">
+        <span className="text-xs px-2 py-1 border rounded-full bg-gray-50">
           {chainName(chainId)} · <code>{chainId}</code>
         </span>
 
-        {/* Address next (only when connected) */}
         {isConnected && (
-          <span style={{
-            fontSize: 12, padding: "4px 8px", border: "1px solid #ddd",
-            borderRadius: 20, background: "#fafafa"
-          }}>
+          <span className="text-xs px-2 py-1 border rounded-full bg-gray-50">
             {short(address)}
           </span>
         )}
-        <button onClick={() => settings.setOpen(true)}>Settings</button>
+        <Button variant="secondary" size="sm" onClick={() => settings.setOpen(true)}>
+          Settings
+        </Button>
 
-        {/* Then Connect / Disconnect */}
         {isConnected ? (
-          <button onClick={() => disconnect()}>Disconnect</button>
+          <Button variant="secondary" size="sm" onClick={() => disconnect()}>
+            Disconnect
+          </Button>
         ) : (
           <WalletButton />
         )}

@@ -13,6 +13,7 @@ import { maxUint256 } from "viem";
 import { useSettings } from "../context/Settings";
 import { useToasts } from "../context/Toasts";
 import { humanError } from "../lib/errors";
+import Button from "./ui/Button";
 
 function applySlippage(x: bigint, bps: number) {
   return (x * BigInt(10_000 - bps)) / 10_000n;
@@ -113,26 +114,28 @@ export default function AddLiquidityPanel() {
   }
 
   return (
-    <div style={{ display: "grid", gap: 12, maxWidth: 680, padding: 16, border: "1px solid #ddd", borderRadius: 8 }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <h3 style={{ margin: 0 }}>Add Liquidity</h3>
-        <div style={{ fontSize: 12, opacity: .8 }}>
+    <div className="grid gap-3 max-w-xl w-full p-4 border rounded-lg bg-white">
+      <div className="flex items-center justify-between">
+        <h3 className="m-0 text-xl font-semibold">Add Liquidity</h3>
+        <div className="text-xs opacity-80">
           Slippage: {(settings.slippageBps / 100).toFixed(2)}% ·{" "}
-          <button onClick={() => settings.setOpen(true)} style={{ fontSize: 12 }}>Change</button>
+          <Button variant="ghost" size="sm" onClick={() => settings.setOpen(true)} className="px-1">
+            Change
+          </Button>
         </div>
       </div>
 
       {/* ETH/WETH block */}
       {isEthWethPair && (
-        <div style={{ color: "#b45309", background: "#fff7ed", border: "1px solid #fde68a", padding: 10, borderRadius: 8 }}>
+        <div className="text-amber-700 bg-amber-50 border border-amber-200 p-2 rounded">
           Adding liquidity to <b>ETH/WETH</b> is not supported (internally becomes WETH/WETH). Use <i>Wrap / Unwrap</i> instead.
         </div>
       )}
 
       {/* Token A */}
-      <div style={{ display: "grid", gap: 8 }}>
+      <div className="grid gap-2">
         <TokenSelect label="Token A" value={tokenA} onChange={setTokenA} />
-        <div style={{ fontSize: 12, opacity: 0.8 }}>
+        <div className="text-xs opacity-80">
           Balance: {fromUnits(aTok.balance ?? 0n, decA)} {aTok.symbol}
         </div>
         <input
@@ -140,17 +143,17 @@ export default function AddLiquidityPanel() {
           value={amountAStr}
           onChange={(e) => setAmountAStr(e.target.value)}
           disabled={isEthWethPair}
-          style={{ padding: 10 }}
+          className="p-2 border rounded"
         />
         {insufficientA && amountADesired > 0n && (
-          <div style={{ color: "crimson", fontSize: 12 }}>Insufficient balance</div>
+          <div className="text-xs text-red-600">Insufficient balance</div>
         )}
       </div>
 
       {/* Token B */}
-      <div style={{ display: "grid", gap: 8 }}>
+      <div className="grid gap-2">
         <TokenSelect label="Token B" value={tokenB} onChange={setTokenB} />
-        <div style={{ fontSize: 12, opacity: 0.8 }}>
+        <div className="text-xs opacity-80">
           Balance: {fromUnits(bTok.balance ?? 0n, decB)} {bTok.symbol}
         </div>
         <input
@@ -158,58 +161,60 @@ export default function AddLiquidityPanel() {
           value={amountBStr}
           onChange={(e) => setAmountBStr(e.target.value)}
           disabled={isEthWethPair}
-          style={{ padding: 10 }}
+          className="p-2 border rounded"
         />
         {insufficientB && amountBDesired > 0n && (
-          <div style={{ color: "crimson", fontSize: 12 }}>Insufficient balance</div>
+          <div className="text-xs text-red-600">Insufficient balance</div>
         )}
       </div>
 
       {/* Pool helper / ratio */}
-      <div style={{ fontSize: 13, background: "#f8f8f8", padding: 10, borderRadius: 8, border: "1px solid #eee" }}>
+      <div className="text-sm bg-gray-50 p-2 rounded border">
         {loadingPair ? (
           <>Loading pool…</>
         ) : pairError ? (
-          <span style={{ color: "crimson" }}>{humanError(pairError)}</span>
+          <span className="text-red-600">{humanError(pairError)}</span>
         ) : initial ? (
           <>Initial liquidity: you set the starting price. Choose both amounts carefully.</>
         ) : (
           <>
             Pool ratio suggests: B ≈ <b>{fromUnits(optimalB, decB)}</b> for your A.
             {" "}
-            <button
-              style={{ marginLeft: 8 }}
+            <Button
+              className="ml-2"
+              variant="secondary"
+              size="sm"
               onClick={() => setAmountBStr(fromUnits(optimalB, decB))}
               disabled={optimalB === 0n || isEthWethPair}
             >
               Use optimal
-            </button>
+            </Button>
           </>
         )}
       </div>
 
       {/* Approvals */}
-      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+      <div className="flex gap-2 flex-wrap">
         {needsApprA && (
-          <button
+          <Button
             onClick={() => approveA(router!, approveAmountA)}
             disabled={isEthWethPair || apPendingA || apMiningA || loadAllowA || amountADesired === 0n || insufficientA || !router}
           >
             {apPendingA ? "Confirm in wallet…" : apMiningA ? "Approving A…" : "Approve A"}
-          </button>
+          </Button>
         )}
         {needsApprB && (
-          <button
+          <Button
             onClick={() => approveB(router!, approveAmountB)}
             disabled={isEthWethPair || apPendingB || apMiningB || loadAllowB || amountBDesired === 0n || insufficientB || !router}
           >
             {apPendingB ? "Confirm in wallet…" : apMiningB ? "Approving B…" : "Approve B"}
-          </button>
+          </Button>
         )}
       </div>
 
       {/* Supply */}
-      <button
+      <Button
         onClick={onSupply}
         disabled={
           isEthWethPair ||
@@ -223,13 +228,13 @@ export default function AddLiquidityPanel() {
         }
       >
         {isPending ? "Confirm in wallet…" : isMining ? "Supplying…" : "Supply"}
-      </button>
+      </Button>
 
       {/* Status */}
       {(apErrA || apWaitErrA || apErrB || apWaitErrB || error) && (
-        <div style={{ color: "crimson" }}>{humanError(apErrA || apWaitErrA || apErrB || apWaitErrB || error)}</div>
+        <div className="text-red-600">{humanError(apErrA || apWaitErrA || apErrB || apWaitErrB || error)}</div>
       )}
-      {isSuccess && <div style={{ color: "green" }}>Liquidity added ✅</div>}
+      {isSuccess && <div className="text-green-600">Liquidity added ✅</div>}
     </div>
   );
 }

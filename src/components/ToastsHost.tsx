@@ -1,32 +1,22 @@
 import { useToasts } from "../context/Toasts";
+import { clsx } from "clsx";
 
 export default function ToastsHost() {
   const { toasts, remove } = useToasts();
   return (
-    <div
-      style={{
-        position: "fixed",
-        right: 12,
-        bottom: 12,
-        display: "grid",
-        gap: 8,
-        zIndex: 2000,
-        pointerEvents: "none", // ✅ nav stays clickable
-      }}
-    >
+    <div className="fixed right-3 bottom-3 grid gap-2 z-[2000] pointer-events-none">
       {toasts.map((t) => (
         <div
           key={t.id}
           onClick={() => remove(t.id)}
-          style={{
-            pointerEvents: "auto",            // only the toast is clickable
-            padding: "10px 12px",
-            borderRadius: 8,
-            border: "1px solid #eee",
-            background:
-              t.kind === "error" ? "#fee2e2" : t.kind === "success" ? "#ecfeff" : "#f8fafc",
-            minWidth: 260,
-          }}
+          className={clsx(
+            "pointer-events-auto min-w-[260px] rounded-md border p-3 text-sm shadow",
+            t.kind === "error"
+              ? "bg-red-50 border-red-200 text-red-700"
+              : t.kind === "success"
+              ? "bg-emerald-50 border-emerald-200 text-emerald-700"
+              : "bg-slate-50 border-slate-200 text-slate-700"
+          )}
         >
           {t.text}
         </div>

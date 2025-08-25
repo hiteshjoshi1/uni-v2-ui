@@ -53,7 +53,6 @@ export default function AddLiquidityPanel() {
 
   const isETHA = tokenA === NATIVE_ETH;
   const isETHB = tokenB === NATIVE_ETH;
-  const isEthPair = (isETHA ? 1 : 0) + (isETHB ? 1 : 0) === 1; // exactly one side is ETH
   const isEthEth = isETHA && isETHB;
 
   // pair info (reserves map to tokenA/tokenB order you pass)

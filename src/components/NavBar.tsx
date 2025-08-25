@@ -3,6 +3,8 @@ import { useAccount, useDisconnect } from "wagmi";
 import WalletButton from "./WalletButton";
 import { useAppNetwork } from "../context/AppNetwork";
 import { useSettings } from "../context/Settings";
+import Button from "./ui/Button";
+import { cn } from "../lib/utils";
 
 function short(a?: string) {
   return a && a.startsWith("0x") ? `${a.slice(0, 6)}…${a.slice(-4)}` : a ?? "";
@@ -30,26 +32,22 @@ export default function NavBar() {
   const settings = useSettings();
 
   return (
-    <header style={{
-      display: "flex", alignItems: "center", gap: 16,
-      padding: "10px 16px", borderBottom: "1px solid #eee"
-    }}>
-      <Link to="/" style={{ fontWeight: 700, textDecoration: "none", color: "#111" }}>
+    <header className="flex items-center gap-4 p-4 border-b border-gray-200">
+      <Link to="/" className="font-bold text-gray-900">
         uni-v2 demo
       </Link>
 
-      <nav style={{ display: "flex", gap: 12 }}>
-        {tabs.map(t => (
+      <nav className="flex gap-3 text-sm">
+        {tabs.map((t) => (
           <NavLink
             key={t.to}
             to={t.to}
-            style={({ isActive }) => ({
-              padding: "6px 10px",
-              borderRadius: 8,
-              textDecoration: "none",
-              color: isActive ? "#111" : "#555",
-              background: isActive ? "#f2f2f2" : "transparent",
-            })}
+            className={({ isActive }) =>
+              cn(
+                "px-3 py-1 rounded-md",
+                isActive ? "bg-gray-100 text-gray-900" : "text-gray-500 hover:text-gray-900"
+              )
+            }
           >
             {t.label}
           </NavLink>
@@ -57,29 +55,25 @@ export default function NavBar() {
       </nav>
 
       {/* Right corner */}
-      <div style={{ marginLeft: "auto", display: "flex", gap: 10, alignItems: "center" }}>
+      <div className="ml-auto flex items-center gap-2">
         {/* Chain first */}
-        <span style={{
-          fontSize: 12, padding: "4px 8px", border: "1px solid #ddd",
-          borderRadius: 20, background: "#fafafa"
-        }}>
+        <span className="text-xs px-2 py-1 border border-gray-300 rounded-full bg-gray-50">
           {chainName(chainId)} · <code>{chainId}</code>
         </span>
 
         {/* Address next (only when connected) */}
         {isConnected && (
-          <span style={{
-            fontSize: 12, padding: "4px 8px", border: "1px solid #ddd",
-            borderRadius: 20, background: "#fafafa"
-          }}>
+          <span className="text-xs px-2 py-1 border border-gray-300 rounded-full bg-gray-50">
             {short(address)}
           </span>
         )}
-        <button onClick={() => settings.setOpen(true)}>Settings</button>
+        <Button className="bg-gray-200 text-gray-800 hover:bg-gray-300" onClick={() => settings.setOpen(true)}>
+          Settings
+        </Button>
 
         {/* Then Connect / Disconnect */}
         {isConnected ? (
-          <button onClick={() => disconnect()}>Disconnect</button>
+          <Button onClick={() => disconnect()}>Disconnect</Button>
         ) : (
           <WalletButton />
         )}

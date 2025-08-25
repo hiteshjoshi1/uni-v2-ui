@@ -62,14 +62,15 @@ export default function PositionsPage() {
   // only pools where user holds LP > 0
   const mine = useMemo(() => positions.filter(p => p.lpBalance > 0n), [positions]);
 
-  if (!supported) return <main style={{ padding: 16 }}><b>Wrong network</b> (chain {chainId})</main>;
-  if (!isConnected) return <main style={{ padding: 16 }}>Connect your wallet to view your liquidity.</main>;
+  if (!supported) return <main className="p-4"><b>Wrong network</b> (chain {chainId})</main>;
+  if (!isConnected) return <main className="p-4">Connect your wallet to view your liquidity.</main>;
 
 
 
   return (
-    <main style={{ padding: 16 }}>
-      <h3>My Liquidity</h3>
+    <main className="flex justify-center p-4">
+      <div className="w-full max-w-5xl">
+        <h3 className="text-lg font-semibold">My Liquidity</h3>
 
       {(loadingPairs || isLoading) && <div>Loading…</div>}
       {(pairsError || error) && <div style={{ color: "crimson" }}>{(pairsError || error)!.message}</div>}
@@ -114,6 +115,7 @@ export default function PositionsPage() {
           </table>
         </div>
       )}
+      </div>
     </main>
   );
 }

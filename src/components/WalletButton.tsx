@@ -1,5 +1,6 @@
 // src/components/WalletButton.tsx
 import { useAccount, useConnect } from "wagmi";
+import Button from "./ui/Button";
 
 export default function WalletButton() {
   const { isConnected } = useAccount();
@@ -15,15 +16,12 @@ export default function WalletButton() {
   const pending = status === "pending";
 
   return (
-    <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-      <button
-        onClick={() => injected && connect({ connector: injected })}
-        disabled={pending || !injected}
-      >
+    <div className="inline-flex items-center gap-2">
+      <Button onClick={() => injected && connect({ connector: injected })} disabled={pending || !injected}>
         {pending ? "Connecting…" : "Connect"}
-      </button>
+      </Button>
       {error && (
-        <span style={{ color: "crimson", fontSize: 12 }}>
+        <span className="text-xs text-red-600">
           {(error as any).shortMessage || (error as Error).message}
         </span>
       )}

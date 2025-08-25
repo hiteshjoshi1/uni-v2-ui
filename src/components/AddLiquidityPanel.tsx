@@ -13,6 +13,8 @@ import { useAccount, useChainId } from "wagmi";
 import { getAddressesFor, type ContractsOnChain } from "../config/addresses";
 import { humanError } from "../lib/errors";
 import { maxUint256 } from "viem";
+import Button from "./ui/Button";
+import Input from "./ui/Input";
 
 const mulDiv = (a: bigint, b: bigint, d: bigint) => (a * b) / d;
 
@@ -51,7 +53,6 @@ export default function AddLiquidityPanel() {
 
   const isETHA = tokenA === NATIVE_ETH;
   const isETHB = tokenB === NATIVE_ETH;
-  const isEthPair = (isETHA ? 1 : 0) + (isETHB ? 1 : 0) === 1; // exactly one side is ETH
   const isEthEth = isETHA && isETHB;
 
   // pair info (reserves map to tokenA/tokenB order you pass)
@@ -175,21 +176,12 @@ export default function AddLiquidityPanel() {
   }
 
   return (
-    <div
-      style={{
-        display: "grid",
-        gap: 12,
-        maxWidth: 720,
-        padding: 16,
-        border: "1px solid #ddd",
-        borderRadius: 8,
-      }}
-    >
-      <div style={{ display: "flex", justifyContent: "space-between" }}>
-        <h3 style={{ margin: 0 }}>Add Liquidity</h3>
-        <div style={{ fontSize: 12 }}>
+    <div className="grid w-full max-w-2xl gap-3 rounded-lg border bg-white p-4">
+      <div className="flex items-center justify-between">
+        <h3 className="m-0 text-lg font-semibold">Add Liquidity</h3>
+        <div className="text-xs text-gray-600">
           Slippage: {(settings.slippageBps / 100).toFixed(2)}% ·{" "}
-          <button style={{ fontSize: 12 }} onClick={() => settings.setOpen(true)}>
+          <button className="text-blue-600" onClick={() => settings.setOpen(true)}>
             Change
           </button>
         </div>
@@ -197,62 +189,53 @@ export default function AddLiquidityPanel() {
 
       {/* Token A */}
       <div>
-        <div style={{ marginBottom: 6, fontWeight: 600 }}>Token A</div>
+        <div className="mb-1 font-semibold">Token A</div>
         <TokenSelect value={tokenA} onChange={setTokenA} />
-        <div style={{ fontSize: 12, opacity: 0.8, marginTop: 4 }}>
+        <div className="mt-1 text-xs text-gray-500">
           Balance: {fromUnits(aTok.balance ?? 0n, decA)} {aTok.symbol}
         </div>
-        <input
+        <Input
           placeholder="Amount A"
           value={aStr}
           onChange={(e) => setAStr(e.target.value)}
-          style={{ padding: 10, width: "100%", marginTop: 8 }}
+          className="mt-2"
         />
         {insufficientA && amtA > 0n && (
-          <div style={{ color: "crimson", fontSize: 12 }}>Insufficient A balance</div>
+          <div className="text-xs text-red-600">Insufficient A balance</div>
         )}
       </div>
 
       {/* Token B */}
       <div>
-        <div style={{ marginBottom: 6, fontWeight: 600 }}>Token B</div>
+        <div className="mb-1 font-semibold">Token B</div>
         <TokenSelect value={tokenB} onChange={setTokenB} />
-        <div style={{ fontSize: 12, opacity: 0.8, marginTop: 4 }}>
+        <div className="mt-1 text-xs text-gray-500">
           Balance: {fromUnits(bTok.balance ?? 0n, decB)} {bTok.symbol}
         </div>
-        <input
+        <Input
           placeholder="Amount B"
           value={bStr}
           onChange={(e) => setBStr(e.target.value)}
-          style={{ padding: 10, width: "100%", marginTop: 8 }}
+          className="mt-2"
         />
         {insufficientB && amtB > 0n && (
-          <div style={{ color: "crimson", fontSize: 12 }}>Insufficient B balance</div>
+          <div className="text-xs text-red-600">Insufficient B balance</div>
         )}
       </div>
 
       {/* Hints */}
       {tokensChosen && (
-        <div
-          style={{
-            background: "#f5f7f9",
-            padding: 10,
-            borderRadius: 8,
-            border: "1px solid #e8edf2",
-            fontSize: 13,
-          }}
-        >
+        <div className="rounded-md border bg-gray-50 p-2 text-sm">
           {loadingPair ? (
             <span>Loading pool…</span>
           ) : pairError ? (
-            <span style={{ color: "crimson" }}>{humanError(pairError)}</span>
+            <span className="text-red-600">{humanError(pairError)}</span>
           ) : showNewPoolBanner ? (
             <span>New pool: first liquidity sets the initial price.</span>
           ) : showOptimal ? (
             <span>
-              Pool ratio suggests: <b>B ≈ {fromUnits(optimalB, decB)}</b> for your A.
-              {" "}
-              <button onClick={onUseOptimalB} style={{ marginLeft: 8, fontSize: 12 }}>
+              Pool ratio suggests: <b>B ≈ {fromUnits(optimalB, decB)}</b> for your A.{' '}
+              <button onClick={onUseOptimalB} className="ml-2 text-xs text-blue-600">
                 Use optimal
               </button>
             </span>
@@ -262,39 +245,39 @@ export default function AddLiquidityPanel() {
 
       {/* Approvals (only for the ERC-20 side(s)) */}
       {!isEthEth && (
-        <div style={{ display: "grid", gap: 8 }}>
+        <div className="grid gap-2">
           {!isETHA && needsApproveA && (
-            <button
+            <Button
               onClick={() => approveA(router!, approveAmtA)}
               disabled={!router || approvingA || approvingAMining || loadingAllowA || amtA === 0n}
             >
               {approvingA ? "Confirm A in wallet…" : approvingAMining ? "Approving A…" : "Approve A"}
-            </button>
+            </Button>
           )}
           {!isETHB && needsApproveB && (
-            <button
+            <Button
               onClick={() => approveB(router!, approveAmtB)}
               disabled={!router || approvingB || approvingBMining || loadingAllowB || amtB === 0n}
             >
               {approvingB ? "Confirm B in wallet…" : approvingBMining ? "Approving B…" : "Approve B"}
-            </button>
+            </Button>
           )}
         </div>
       )}
 
       {/* Supply */}
-      <button onClick={onSupply} disabled={!canSupply || supplying || supplyMining}>
+      <Button onClick={onSupply} disabled={!canSupply || supplying || supplyMining}>
         {supplying ? "Confirm in wallet…" : supplyMining ? "Supplying…" : "Supply"}
-      </button>
+      </Button>
 
       {/* Errors */}
       {(approveAWriteErr || approveAWaitErr) && (
-        <div style={{ color: "crimson" }}>{humanError(approveAWriteErr || approveAWaitErr)}</div>
+        <div className="text-sm text-red-600">{humanError(approveAWriteErr || approveAWaitErr)}</div>
       )}
       {(approveBWriteErr || approveBWaitErr) && (
-        <div style={{ color: "crimson" }}>{humanError(approveBWriteErr || approveBWaitErr)}</div>
+        <div className="text-sm text-red-600">{humanError(approveBWriteErr || approveBWaitErr)}</div>
       )}
-      {supplyErr && <div style={{ color: "crimson" }}>{humanError(supplyErr)}</div>}
+      {supplyErr && <div className="text-sm text-red-600">{humanError(supplyErr)}</div>}
     </div>
   );
 }

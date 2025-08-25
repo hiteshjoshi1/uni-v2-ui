@@ -2,7 +2,7 @@ import SwapPanel from "../components/SwapPanel";
 
 export default function TradePage() {
   return (
-    <main style={{ padding: 16 }}>
+    <main className="flex justify-center p-4">
       <SwapPanel />
     </main>
   );

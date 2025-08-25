@@ -2,6 +2,8 @@ import { useMemo } from "react";
 import tokens from "../config/tokens.local.json";
 import { getAddressesFor } from "../config/addresses";
 import { useChainId } from "wagmi";
+import Select from "./ui/Select";
+import Input from "./ui/Input";
 
 type Props = { value?: string; onChange: (addr: string) => void; label?: string };
 
@@ -25,16 +27,20 @@ export default function TokenSelect({ value, onChange, label }: Props) {
   }, [addrMap]);
 
   return (
-    <div style={{ display: "grid", gap: 8 }}>
-      {label && <label>{label}</label>}
-      <select value={value ?? ""} onChange={(e) => onChange(e.target.value)}>
-        <option value="" disabled>Select token…</option>
+    <div className="grid gap-2">
+      {label && <label className="text-sm font-medium">{label}</label>}
+      <Select value={value ?? ""} onChange={(e) => onChange(e.target.value)}>
+        <option value="" disabled>
+          Select token…
+        </option>
         <option value={NATIVE_ETH}>ETH (native)</option>
         {list.map((t) => (
-          <option key={t.symbol} value={t.address}>{t.symbol} {t.address ? `(${t.address.slice(0, 6)}…${t.address.slice(-4)})` : ""}</option>
+          <option key={t.symbol} value={t.address}>
+            {t.symbol} {t.address ? `(${t.address.slice(0, 6)}…${t.address.slice(-4)})` : ""}
+          </option>
         ))}
-      </select>
-      <input
+      </Select>
+      <Input
         placeholder="Or paste token address 0x…"
         value={value ?? ""}
         onChange={(e) => onChange(e.target.value)}

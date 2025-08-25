@@ -1,32 +1,22 @@
 import { useToasts } from "../context/Toasts";
+import { cn } from "../lib/utils";
 
 export default function ToastsHost() {
   const { toasts, remove } = useToasts();
   return (
-    <div
-      style={{
-        position: "fixed",
-        right: 12,
-        bottom: 12,
-        display: "grid",
-        gap: 8,
-        zIndex: 2000,
-        pointerEvents: "none", // ✅ nav stays clickable
-      }}
-    >
+    <div className="fixed right-4 bottom-4 z-[2000] grid gap-2 pointer-events-none">
       {toasts.map((t) => (
         <div
           key={t.id}
           onClick={() => remove(t.id)}
-          style={{
-            pointerEvents: "auto",            // only the toast is clickable
-            padding: "10px 12px",
-            borderRadius: 8,
-            border: "1px solid #eee",
-            background:
-              t.kind === "error" ? "#fee2e2" : t.kind === "success" ? "#ecfeff" : "#f8fafc",
-            minWidth: 260,
-          }}
+          className={cn(
+            "pointer-events-auto min-w-[260px] rounded-md border px-3 py-2 shadow",
+            t.kind === "error"
+              ? "bg-red-50 border-red-200 text-red-800"
+              : t.kind === "success"
+              ? "bg-teal-50 border-teal-200 text-teal-800"
+              : "bg-slate-50 border-slate-200"
+          )}
         >
           {t.text}
         </div>

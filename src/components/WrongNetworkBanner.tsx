@@ -1,4 +1,5 @@
 import { useAppNetwork } from "../context/AppNetwork";
+import Button from "./ui/Button";
 
 export default function WrongNetworkBanner() {
   const { supported, chainId } = useAppNetwork();
@@ -41,10 +42,20 @@ export default function WrongNetworkBanner() {
   }
 
   return (
-    <div style={{ background: "#fff7ed", borderBottom: "1px solid #fde68a", padding: "8px 12px", display: "flex", gap: 12, alignItems: "center" }}>
+    <div className="flex items-center gap-3 border-b border-amber-200 bg-amber-50 px-3 py-2 text-sm">
       <b>Wrong network:</b> connected to {chainId}. Switch to Anvil or Sepolia.
-      <button onClick={() => switchOrAdd(31337)}>Switch to Anvil</button>
-      <button onClick={() => switchOrAdd(11155111)}>Switch to Sepolia</button>
+      <Button
+        onClick={() => switchOrAdd(31337)}
+        className="bg-amber-200 text-amber-900 hover:bg-amber-300"
+      >
+        Switch to Anvil
+      </Button>
+      <Button
+        onClick={() => switchOrAdd(11155111)}
+        className="bg-amber-200 text-amber-900 hover:bg-amber-300"
+      >
+        Switch to Sepolia
+      </Button>
     </div>
   );
 }

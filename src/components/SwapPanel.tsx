@@ -13,6 +13,8 @@ import { useTokenBalance } from "../hooks/useTokenBalance";
 import { useSettings } from "../context/Settings";
 import { useToasts } from "../context/Toasts";
 import { humanError } from "../lib/errors";
+import Button from "./ui/Button";
+import Input from "./ui/Input";
 
 const shortenAddress = (adr?: string) =>
   adr && adr.startsWith("0x") ? `${adr.slice(0, 6)}…${adr.slice(-4)}` : adr ?? "";
@@ -133,87 +135,71 @@ export default function SwapPanel() {
   }
 
   return (
-    <div
-      style={{
-        display: "grid",
-        gap: 12,
-        maxWidth: 640,
-        padding: 16,
-        border: "1px solid #ddd",
-        borderRadius: 8,
-      }}
-    >
-      <h3 style={{ margin: 0 }}>Swap</h3>
+    <div className="grid w-full max-w-xl gap-3 rounded-lg border bg-white p-4">
+      <h3 className="text-lg font-semibold">Swap</h3>
 
       {/* FROM */}
       <TokenSelect label="From" value={tokenIn} onChange={setTokenIn} />
-      <div style={{ fontSize: 12, opacity: 0.8 }}>
+      <div className="text-xs text-gray-500">
         Balance: {fromUnits(inTok.balance ?? 0n, decIn)} {inTok.symbol}
       </div>
-      <input
+      <Input
         placeholder="Amount in"
         value={amountInStr}
         onChange={(e) => setAmountInStr(e.target.value)}
-        style={{ padding: 10 }}
       />
       {insufficient && amountIn > 0n && (
-        <div style={{ color: "crimson", fontSize: 12 }}>Insufficient balance</div>
+        <div className="text-xs text-red-600">Insufficient balance</div>
       )}
 
       {/* TO */}
       <TokenSelect label="To" value={tokenOut} onChange={setTokenOut} />
-      <div style={{ fontSize: 12, opacity: 0.8 }}>
+      <div className="text-xs text-gray-500">
         Balance: {fromUnits(outTok.balance ?? 0n, decOut)} {outTok.symbol}
       </div>
 
       {/* Quote */}
-      <div style={{ display: "grid", gap: 4 }}>
+      <div className="grid gap-1 text-sm">
         <div>
           <b>Estimated Out:</b> {quoting ? "…" : fromUnits(amountOut, decOut)}
         </div>
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <div className="flex items-center gap-2">
           <div>
             <b>Min Out ({(settings.slippageBps / 100).toFixed(2)}%):</b>{" "}
             {fromUnits(minOut, decOut)}
           </div>
-          <span style={{ fontSize: 12, opacity: 0.8 }}>
+          <span className="text-xs text-gray-500">
             Slippage ·{" "}
-            <button onClick={() => settings.setOpen(true)} style={{ fontSize: 12 }}>
+            <button onClick={() => settings.setOpen(true)} className="text-xs text-blue-600">
               Change
             </button>
           </span>
         </div>
-        {quoteError && <div style={{ color: "crimson" }}>{humanError(quoteError)}</div>}
+        {quoteError && <div className="text-sm text-red-600">{humanError(quoteError)}</div>}
       </div>
 
       {/* Approval details */}
       {!skipApproval && needsApproval && (
-        <div
-          style={{
-            background: "#f8f8f8",
-            padding: 12,
-            borderRadius: 8,
-            fontSize: 13,
-            border: "1px solid #eee",
-          }}
-        >
+        <div className="rounded-md border bg-gray-50 p-3 text-sm">
           <b>Approval required</b>
-          <div>Spender (Router): <code title={router}>{shortenAddress(router)}</code></div>
+          <div>
+            Spender (Router): <code title={router}>{shortenAddress(router)}</code>
+          </div>
           <div>Current allowance: {fromUnits(allowance, decIn)}</div>
           <div>
             This will set your spending cap to{" "}
             <b>{settings.approvalMode === "unlimited" ? "Unlimited" : fromUnits(approveAmount, decIn)}</b>.
           </div>
-          <div style={{ fontSize: 12, opacity: 0.8, marginTop: 6 }}>
+          <div className="mt-1 text-xs text-gray-500">
             Mode: <code>{settings.approvalMode}</code> (change in Settings)
           </div>
         </div>
       )}
 
       {/* Actions */}
-      <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+      <div className="flex flex-wrap gap-3">
         {!skipApproval && needsApproval ? (
-          <button
+          <Button
             onClick={() => approve(router!, approveAmount)}
             disabled={
               !router ||
@@ -225,9 +211,9 @@ export default function SwapPanel() {
             }
           >
             {approving ? "Confirm in wallet…" : approvingMining ? "Approving…" : "Approve"}
-          </button>
+          </Button>
         ) : (
-          <button
+          <Button
             onClick={onSwap}
             disabled={
               swapping ||
@@ -240,15 +226,15 @@ export default function SwapPanel() {
             }
           >
             {swapping ? "Confirm in wallet…" : swapMining ? "Swapping…" : "Swap"}
-          </button>
+          </Button>
         )}
       </div>
 
       {(writeError || waitError || swapError) && (
-        <div style={{ color: "crimson" }}>{humanError(writeError || waitError || swapError)}</div>
+        <div className="text-sm text-red-600">{humanError(writeError || waitError || swapError)}</div>
       )}
 
-      {swapOk && <div style={{ color: "green" }}>Swap complete ✅</div>}
+      {swapOk && <div className="text-green-600">Swap complete ✅</div>}
     </div>
   );
 }

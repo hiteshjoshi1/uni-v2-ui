@@ -98,12 +98,13 @@ export default function RemoveLiquidityPage() {
     });
   }
 
-  if (!supported) return <main style={{ padding: 16 }}><b>Wrong network</b> (chain {chainId})</main>;
-  if (!isConnected) return <main style={{ padding: 16 }}>Connect your wallet to remove liquidity.</main>;
+  if (!supported) return <main className="p-4"><b>Wrong network</b> (chain {chainId})</main>;
+  if (!isConnected) return <main className="p-4">Connect your wallet to remove liquidity.</main>;
 
   return (
-    <main style={{ padding: 16, display: "grid", gap: 16, maxWidth: 900 }}>
-      <h3>Remove Liquidity</h3>
+    <main className="p-4 flex justify-center">
+      <div className="grid w-full max-w-3xl gap-4">
+      <h3 className="text-lg font-semibold">Remove Liquidity</h3>
 
       {(loadingPairs || loadingPos) && <div>Loading pools…</div>}
       {(pairsError || posError) && <div style={{ color: "crimson" }}>{(pairsError || posError)!.message}</div>}
@@ -195,6 +196,7 @@ export default function RemoveLiquidityPage() {
           </div>
         </>
       )}
+      </div>
     </main>
   );
 }

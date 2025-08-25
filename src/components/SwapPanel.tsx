@@ -43,6 +43,8 @@ export default function SwapPanel() {
 
 
   // resolve addresses for active chain
+  // only get once and memoize
+  // if chain Id changes , then refetch
   const addresses = useMemo<ContractsOnChain | null>(() => {
     try {
       return getAddressesFor(chainId);
@@ -78,7 +80,7 @@ export default function SwapPanel() {
   // If we implement native wrap/unwrap (WETH<->ETH) directly, no approval is needed for that path.
   const skipApproval = isInETH || (tokenIn && WETH && tokenIn === WETH && isOutETH);
 
-  const { allowance, isLoading: loadingAllow, refetch: refetchAllow } = useAllowance(
+  const { allowance, isLoading: loadingAllow } = useAllowance(
     skipApproval ? undefined : (tokenIn || undefined) as `0x${string}` | undefined,
     router
   );

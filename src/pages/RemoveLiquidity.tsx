@@ -64,7 +64,7 @@ export default function RemoveLiquidityPage() {
 
   // 4) remove settings
   const [pct, setPct] = useState<number>(10000); // 100%
-  const [slipBps, setSlipBps] = useState<number>(50); // 0.50%
+  const [slipBps] = useState<number>(50);
   const [unwrap, setUnwrap] = useState<boolean>(true);
   useEffect(() => {
     if (!p || !WETH) return;
